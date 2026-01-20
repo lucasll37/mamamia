@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package mlinference.common;
+
+// Common data types
+
+message Tensor {
+    repeated int32 shape = 1;
+    DataType dtype = 2;
+    bytes data = 3; // Serialized tensor data
+}
+
+enum DataType {
+    FLOAT32 = 0;
+    FLOAT64 = 1;
+    INT32 = 2;
+    INT64 = 3;
+    UINT8 = 4;
+    BOOL = 5;
+}
+
+message ModelInfo {
+    string model_id = 1;
+    string version = 2;
+    string framework = 3;
+    repeated string input_names = 4;
+    repeated string output_names = 5;
+    map<string, TensorShape> input_shapes = 6;
+    map<string, TensorShape> output_shapes = 7;
+    map<string, string> metadata = 8;
+}
+
+message TensorShape {
+    repeated int32 dims = 1;
+    DataType dtype = 2;
+}
+
+enum WorkerStatus {
+    UNKNOWN = 0;
+    INITIALIZING = 1;
+    READY = 2;
+    BUSY = 3;
+    DEGRADED = 4;
+    OFFLINE = 5;
+}
+
+message WorkerCapabilities {
+    bool supports_gpu = 1;
+    uint32 num_gpus = 2;
+    uint32 num_cpu_cores = 3;
+    uint64 total_memory_mb = 4;
+    uint64 available_memory_mb = 5;
+    repeated string supported_frameworks = 6;
+}
+
+message WorkerMetrics {
+    uint64 total_requests = 1;
+    uint64 successful_requests = 2;
+    uint64 failed_requests = 3;
+    uint32 active_requests = 4;
+    double avg_response_time_ms = 5;
+    double cpu_usage_percent = 6;
+    double memory_usage_percent = 7;
+    double gpu_usage_percent = 8;
+    int64 uptime_seconds = 9;
+}
