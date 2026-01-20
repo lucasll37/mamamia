@@ -1,0 +1,76 @@
+# Python dependencies for ML Inference System
+
+# Core dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# gRPC
+grpcio==1.59.3
+grpcio-tools==1.59.3
+protobuf==4.25.1
+
+# CLI
+click==8.1.7
+rich==13.7.0
+tabulate==0.9.0
+
+# HTTP client
+httpx==0.25.2
+aiohttp==3.9.1
+
+# Data processing
+numpy==1.26.2
+pandas==2.1.4
+
+# Configuration
+pyyaml==6.0.1
+python-dotenv==1.0.0
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# Validation
+jsonschema==4.20.0
+
+# Monitoring
+prometheus-client==0.19.0
+
+# Logging
+structlog==23.2.0
+
+# Database (for API Gateway cache)
+redis==5.0.1
+aioredis==2.0.1
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+
+# Code quality
+black==23.12.0
+isort==5.13.2
+flake8==6.1.0
+mypy==1.7.1
+
+# Documentation
+sphinx==7.2.6
+sphinx-rtd-theme==2.0.0
+
+# Development
+ipython==8.18.1
+ipdb==0.13.13
+
+# Optional: ONNX for model validation
+onnx==1.15.0
+onnxruntime==1.16.3
+# onnxruntime-gpu==1.16.3  # Uncomment for GPU support
+
+# Optional: Model conversion utilities
+tf2onnx==1.15.1  # TensorFlow to ONNX
+torch==2.1.1  # PyTorch (for PyTorch to ONNX)

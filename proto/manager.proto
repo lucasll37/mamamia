@@ -1,0 +1,263 @@
+syntax = "proto3";
+
+package mlinference.manager;
+
+import "common.proto";
+
+// Manager Service - Orchestrates workers and models
+service ManagerService {
+  // Worker Management
+  rpc RegisterWorker(RegisterWorkerRequest) returns (RegisterWorkerResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc UnregisterWorker(UnregisterWorkerRequest) returns (UnregisterWorkerResponse);
+  rpc ListWorkers(ListWorkersRequest) returns (ListWorkersResponse);
+  
+  // Worker Assignment for Clients
+  rpc GetWorkerForInference(GetWorkerRequest) returns (GetWorkerResponse);
+  
+  // Model Registry
+  rpc RegisterModel(RegisterModelRequest) returns (RegisterModelResponse);
+  rpc GetModel(GetModelRequest) returns (GetModelResponse);
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse);
+  rpc UpdateModel(UpdateModelRequest) returns (UpdateModelResponse);
+  rpc DeleteModel(DeleteModelRequest) returns (DeleteModelResponse);
+  rpc UploadModelChunk(stream UploadModelChunkRequest) returns (UploadModelResponse);
+  
+  // API Key Management
+  rpc CreateApiKey(CreateApiKeyRequest) returns (CreateApiKeyResponse);
+  rpc ValidateApiKey(ValidateApiKeyRequest) returns (ValidateApiKeyResponse);
+  rpc ListApiKeys(ListApiKeysRequest) returns (ListApiKeysResponse);
+  rpc RevokeApiKey(RevokeApiKeyRequest) returns (RevokeApiKeyResponse);
+  
+  // Health and Metrics
+  rpc GetHealth(GetHealthRequest) returns (GetHealthResponse);
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+  rpc GetAggregatedMetrics(GetAggregatedMetricsRequest) returns (GetAggregatedMetricsResponse);
+}
+
+// Worker Management Messages
+message RegisterWorkerRequest {
+  string worker_id = 1;
+  string address = 2;
+  uint32 port = 3;
+  common.WorkerCapabilities capabilities = 4;
+}
+
+message RegisterWorkerResponse {
+  bool success = 1;
+  string message = 2;
+  uint32 heartbeat_interval_seconds = 3;
+}
+
+message HeartbeatRequest {
+  string worker_id = 1;
+  common.WorkerMetrics metrics = 2;
+  repeated string loaded_models = 3;
+}
+
+message HeartbeatResponse {
+  bool acknowledged = 1;
+  repeated string models_to_load = 2;
+  repeated string models_to_unload = 3;
+}
+
+message UnregisterWorkerRequest {
+  string worker_id = 1;
+  string reason = 2;
+}
+
+message UnregisterWorkerResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListWorkersRequest {
+  common.WorkerStatus status_filter = 1;
+  bool include_metrics = 2;
+}
+
+message ListWorkersResponse {
+  repeated common.WorkerInfo workers = 1;
+}
+
+// Worker Assignment Messages
+message GetWorkerRequest {
+  string model_id = 1;
+  string model_version = 2;
+  string api_key = 3;
+  map<string, string> requirements = 4; // gpu_required, min_memory, etc
+}
+
+message GetWorkerResponse {
+  bool success = 1;
+  string worker_id = 2;
+  string worker_address = 3;
+  uint32 worker_port = 4;
+  string error_message = 5;
+  string session_token = 6; // Token for direct communication
+}
+
+// Model Registry Messages
+message RegisterModelRequest {
+  common.ModelMetadata metadata = 1;
+  bytes model_file = 2; // For small models
+  string storage_path = 3; // For large models (uploaded separately)
+  string api_key = 4;
+}
+
+message RegisterModelResponse {
+  bool success = 1;
+  string model_id = 2;
+  string message = 3;
+}
+
+message GetModelRequest {
+  string model_id = 1;
+  string version = 2; // Optional, defaults to latest
+}
+
+message GetModelResponse {
+  bool success = 1;
+  common.ModelMetadata metadata = 2;
+  string storage_path = 3;
+  string error_message = 4;
+}
+
+message ListModelsRequest {
+  string stage_filter = 1; // dev, staging, prod
+  repeated string tag_filter = 2;
+  uint32 page = 3;
+  uint32 page_size = 4;
+}
+
+message ListModelsResponse {
+  repeated common.ModelMetadata models = 1;
+  uint32 total_count = 2;
+  uint32 page = 3;
+  uint32 page_size = 4;
+}
+
+message UpdateModelRequest {
+  string model_id = 1;
+  common.ModelMetadata metadata = 2;
+  string api_key = 3;
+}
+
+message UpdateModelResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message DeleteModelRequest {
+  string model_id = 1;
+  string version = 2;
+  string api_key = 3;
+}
+
+message DeleteModelResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message UploadModelChunkRequest {
+  string model_id = 1;
+  string version = 2;
+  bytes chunk_data = 3;
+  uint32 chunk_index = 4;
+  uint32 total_chunks = 5;
+  string api_key = 6;
+}
+
+message UploadModelResponse {
+  bool success = 1;
+  string model_id = 2;
+  string storage_path = 3;
+  string message = 4;
+}
+
+// API Key Management Messages
+message CreateApiKeyRequest {
+  string name = 1;
+  repeated string permissions = 2;
+  string expires_at = 3; // ISO8601 format
+  uint64 rate_limit_per_minute = 4;
+  string admin_key = 5;
+}
+
+message CreateApiKeyResponse {
+  bool success = 1;
+  string key_id = 2;
+  string api_key = 3; // Plain text key (only shown once)
+  string message = 4;
+}
+
+message ValidateApiKeyRequest {
+  string api_key = 1;
+  string required_permission = 2;
+}
+
+message ValidateApiKeyResponse {
+  bool valid = 1;
+  string key_id = 2;
+  repeated string permissions = 3;
+  bool rate_limited = 4;
+}
+
+message ListApiKeysRequest {
+  bool include_disabled = 1;
+  string admin_key = 2;
+}
+
+message ListApiKeysResponse {
+  repeated common.ApiKey keys = 1;
+}
+
+message RevokeApiKeyRequest {
+  string key_id = 1;
+  string admin_key = 2;
+}
+
+message RevokeApiKeyResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Health and Metrics Messages
+message GetHealthRequest {
+  bool include_workers = 1;
+}
+
+message GetHealthResponse {
+  common.HealthStatus manager_health = 1;
+  map<string, common.HealthStatus> worker_health = 2;
+}
+
+message GetMetricsRequest {
+  string worker_id = 1;
+}
+
+message GetMetricsResponse {
+  common.WorkerMetrics metrics = 1;
+}
+
+message GetAggregatedMetricsRequest {
+  // Empty for now, can add time ranges later
+}
+
+message GetAggregatedMetricsResponse {
+  message AggregatedMetrics {
+    uint32 total_workers = 1;
+    uint32 active_workers = 2;
+    uint32 total_models = 3;
+    uint64 total_requests = 4;
+    uint64 failed_requests = 5;
+    double avg_latency_ms = 6;
+    double p95_latency_ms = 7;
+    double p99_latency_ms = 8;
+    double total_gpu_usage_percent = 9;
+    uint32 active_requests = 10;
+  }
+  
+  AggregatedMetrics metrics = 1;
+  string timestamp = 2;
+}

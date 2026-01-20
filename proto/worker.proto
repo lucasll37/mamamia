@@ -1,0 +1,171 @@
+syntax = "proto3";
+
+package mlinference.worker;
+
+import "common.proto";
+
+// Worker Service - Executes inference directly for clients
+service WorkerService {
+  // Inference Operations
+  rpc Predict(PredictRequest) returns (PredictResponse);
+  rpc PredictStream(stream PredictRequest) returns (stream PredictResponse);
+  rpc BatchPredict(BatchPredictRequest) returns (BatchPredictResponse);
+  
+  // Model Management on Worker
+  rpc LoadModel(LoadModelRequest) returns (LoadModelResponse);
+  rpc UnloadModel(UnloadModelRequest) returns (UnloadModelResponse);
+  rpc ListLoadedModels(ListLoadedModelsRequest) returns (ListLoadedModelsResponse);
+  rpc GetModelInfo(GetModelInfoRequest) returns (GetModelInfoResponse);
+  
+  // Worker Status
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// Inference Messages
+message PredictRequest {
+  string request_id = 1;
+  string model_id = 2;
+  string model_version = 3;
+  repeated common.Tensor inputs = 4;
+  map<string, string> parameters = 5;
+  string session_token = 6; // From manager
+  
+  // Configuration options
+  bool use_gpu = 7;
+  uint32 timeout_ms = 8;
+}
+
+message PredictResponse {
+  string request_id = 1;
+  bool success = 2;
+  repeated common.Tensor outputs = 3;
+  string error_message = 4;
+  
+  // Performance metrics
+  double inference_time_ms = 5;
+  double preprocessing_time_ms = 6;
+  double postprocessing_time_ms = 7;
+  double queue_time_ms = 8;
+  string worker_id = 9;
+}
+
+message BatchPredictRequest {
+  string batch_id = 1;
+  string model_id = 2;
+  string model_version = 3;
+  repeated PredictRequest requests = 4;
+  string session_token = 5;
+}
+
+message BatchPredictResponse {
+  string batch_id = 1;
+  repeated PredictResponse responses = 2;
+  double total_time_ms = 3;
+}
+
+// Model Management Messages
+message LoadModelRequest {
+  string model_id = 1;
+  string model_version = 2;
+  string model_path = 3;
+  common.ModelMetadata metadata = 4;
+  
+  // Loading options
+  bool use_gpu = 5;
+  uint32 gpu_device_id = 6;
+  uint32 num_threads = 7;
+}
+
+message LoadModelResponse {
+  bool success = 1;
+  string message = 2;
+  double load_time_ms = 3;
+  uint64 model_size_mb = 4;
+}
+
+message UnloadModelRequest {
+  string model_id = 1;
+  string model_version = 2;
+  bool force = 3; // Force unload even if requests are pending
+}
+
+message UnloadModelResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListLoadedModelsRequest {
+  // Empty for now
+}
+
+message ListLoadedModelsResponse {
+  message LoadedModelInfo {
+    string model_id = 1;
+    string model_version = 2;
+    string loaded_at = 3;
+    uint64 memory_usage_mb = 4;
+    uint32 active_requests = 5;
+    uint64 total_requests = 6;
+    double avg_inference_time_ms = 7;
+    bool on_gpu = 8;
+  }
+  
+  repeated LoadedModelInfo models = 1;
+}
+
+message GetModelInfoRequest {
+  string model_id = 1;
+  string model_version = 2;
+}
+
+message GetModelInfoResponse {
+  bool success = 1;
+  common.ModelMetadata metadata = 2;
+  bool is_loaded = 3;
+  uint64 memory_usage_mb = 4;
+  string error_message = 5;
+}
+
+// Worker Status Messages
+message GetStatusRequest {
+  // Empty for now
+}
+
+message GetStatusResponse {
+  string worker_id = 1;
+  common.WorkerStatus status = 2;
+  common.WorkerCapabilities capabilities = 3;
+  repeated string loaded_models = 4;
+  string uptime = 5;
+}
+
+message GetMetricsRequest {
+  bool include_model_metrics = 1;
+}
+
+message GetMetricsResponse {
+  message ModelMetrics {
+    string model_id = 1;
+    string model_version = 2;
+    uint64 request_count = 3;
+    double avg_latency_ms = 4;
+    double p95_latency_ms = 5;
+    double p99_latency_ms = 6;
+    uint64 error_count = 7;
+  }
+  
+  common.WorkerMetrics overall_metrics = 1;
+  repeated ModelMetrics model_metrics = 2;
+  string timestamp = 3;
+}
+
+message HealthCheckRequest {
+  bool detailed = 1;
+}
+
+message HealthCheckResponse {
+  common.HealthStatus health = 1;
+  map<string, string> system_info = 2;
+}

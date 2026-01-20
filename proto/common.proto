@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+package mlinference.common;
+
+// Semantic versioning
+message Version {
+  uint32 major = 1;
+  uint32 minor = 2;
+  uint32 patch = 3;
+}
+
+// Model metadata
+message ModelMetadata {
+  string model_id = 1;
+  string name = 2;
+  Version version = 3;
+  string description = 4;
+  repeated string tags = 5;
+  string stage = 6; // dev, staging, prod
+  string created_at = 7;
+  string updated_at = 8;
+  
+  // Model specifications
+  InputOutputSchema schema = 9;
+  int64 size_bytes = 10;
+  string framework = 11; // tensorflow, pytorch, etc
+}
+
+// Input/Output schema definition
+message InputOutputSchema {
+  message TensorSpec {
+    string name = 1;
+    repeated int64 shape = 2;
+    string dtype = 3; // float32, int64, etc
+    bool optional = 4;
+  }
+  
+  repeated TensorSpec inputs = 1;
+  repeated TensorSpec outputs = 2;
+  string json_schema = 3; // JSON Schema for validation
+}
+
+// Tensor data for inference
+message Tensor {
+  string name = 1;
+  repeated int64 shape = 2;
+  string dtype = 3;
+  
+  oneof data {
+    bytes float_data = 4;
+    bytes int_data = 5;
+    bytes double_data = 6;
+    bytes int64_data = 7;
+  }
+}
+
+// Inference request
+message InferenceRequest {
+  string request_id = 1;
+  string model_id = 2;
+  string model_version = 3; // semantic version or "latest"
+  repeated Tensor inputs = 4;
+  map<string, string> parameters = 5;
+  string api_key = 6;
+}
+
+// Inference response
+message InferenceResponse {
+  string request_id = 1;
+  bool success = 2;
+  repeated Tensor outputs = 3;
+  string error_message = 4;
+  
+  // Performance metrics
+  double inference_time_ms = 5;
+  double preprocessing_time_ms = 6;
+  double postprocessing_time_ms = 7;
+}
+
+// Worker information
+message WorkerInfo {
+  string worker_id = 1;
+  string address = 2;
+  uint32 port = 3;
+  WorkerStatus status = 4;
+  WorkerCapabilities capabilities = 5;
+  WorkerMetrics metrics = 6;
+  string last_heartbeat = 7;
+}
+
+enum WorkerStatus {
+  WORKER_STATUS_UNKNOWN = 0;
+  WORKER_STATUS_IDLE = 1;
+  WORKER_STATUS_BUSY = 2;
+  WORKER_STATUS_OVERLOADED = 3;
+  WORKER_STATUS_OFFLINE = 4;
+}
+
+message WorkerCapabilities {
+  bool has_gpu = 1;
+  repeated string gpu_models = 2;
+  uint64 total_memory_gb = 3;
+  uint64 gpu_memory_gb = 4;
+  uint32 max_concurrent_requests = 5;
+  repeated string supported_models = 6;
+}
+
+message WorkerMetrics {
+  double cpu_usage_percent = 1;
+  double memory_usage_percent = 2;
+  double gpu_usage_percent = 3;
+  double gpu_memory_usage_percent = 4;
+  uint32 active_requests = 5;
+  uint32 queued_requests = 6;
+  double avg_latency_ms = 7;
+  uint64 total_requests = 8;
+  uint64 failed_requests = 9;
+}
+
+// API Key information
+message ApiKey {
+  string key_id = 1;
+  string key_hash = 2;
+  string name = 3;
+  repeated string permissions = 4; // inference, model_upload, admin, etc
+  bool enabled = 5;
+  string created_at = 6;
+  string expires_at = 7;
+  uint64 request_count = 8;
+  uint64 rate_limit_per_minute = 9;
+}
+
+// Health status
+message HealthStatus {
+  bool healthy = 1;
+  string message = 2;
+  map<string, string> details = 3;
+}
