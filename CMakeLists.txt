@@ -41,59 +41,76 @@ get_target_property(GRPC_CPP_PLUGIN_EXECUTABLE gRPC::grpc_cpp_plugin LOCATION)
 message(STATUS "Found grpc_cpp_plugin: ${GRPC_CPP_PLUGIN_EXECUTABLE}")
 
 # Generate protobuf and gRPC files
-# set(PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/proto")
-# set(PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
-# file(MAKE_DIRECTORY ${PROTO_OUTPUT_DIR})
+set(PROTO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/proto")
+set(PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+file(MAKE_DIRECTORY ${PROTO_OUTPUT_DIR})
 
-# set(PROTO_FILES
-#     ${PROTO_DIR}/common.proto
-#     ${PROTO_DIR}/worker.proto
-# )
+set(PROTO_FILES
+    ${PROTO_DIR}/common.proto
+    ${PROTO_DIR}/worker.proto
+)
 
-# set(GENERATED_PROTO_SRCS)
-# set(GENERATED_PROTO_HDRS)
-# set(GENERATED_GRPC_SRCS)
-# set(GENERATED_GRPC_HDRS)
+set(GENERATED_PROTO_SRCS)
+set(GENERATED_PROTO_HDRS)
+set(GENERATED_GRPC_SRCS)
+set(GENERATED_GRPC_HDRS)
 
-# foreach(PROTO_FILE ${PROTO_FILES})
-#     get_filename_component(PROTO_NAME ${PROTO_FILE} NAME_WE)
+foreach(PROTO_FILE ${PROTO_FILES})
+    get_filename_component(PROTO_NAME ${PROTO_FILE} NAME_WE)
     
-#     list(APPEND GENERATED_PROTO_SRCS "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.cc")
-#     list(APPEND GENERATED_PROTO_HDRS "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.h")
-#     list(APPEND GENERATED_GRPC_SRCS "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.cc")
-#     list(APPEND GENERATED_GRPC_HDRS "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.h")
+    list(APPEND GENERATED_PROTO_SRCS "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.cc")
+    list(APPEND GENERATED_PROTO_HDRS "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.h")
+    list(APPEND GENERATED_GRPC_SRCS "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.cc")
+    list(APPEND GENERATED_GRPC_HDRS "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.h")
     
-#     add_custom_command(
-#         OUTPUT "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.cc"
-#                "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.h"
-#                "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.cc"
-#                "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.h"
-#         COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
-#         ARGS --cpp_out=${PROTO_OUTPUT_DIR}
-#              --grpc_out=${PROTO_OUTPUT_DIR}
-#              --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN_EXECUTABLE}
-#              -I${PROTO_DIR}
-#              ${PROTO_FILE}
-#         DEPENDS ${PROTO_FILE}
-#         COMMENT "Generating protobuf and gRPC files for ${PROTO_NAME}"
-#     )
-# endforeach()
+    # add_custom_command(
+    #     OUTPUT "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.cc"
+    #            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.h"
+    #            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.cc"
+    #            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.h"
+    #     COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+    #     ARGS --cpp_out=${PROTO_OUTPUT_DIR}
+    #          --grpc_out=${PROTO_OUTPUT_DIR}
+    #          --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN_EXECUTABLE}
+    #          -I${PROTO_DIR}
+    #          ${PROTO_FILE}
+    #     DEPENDS ${PROTO_FILE}
+    #     COMMENT "Generating protobuf and gRPC files for ${PROTO_NAME}"
+    # )
+
+# Apenas a parte relevante para protoc
+    add_custom_command(
+        OUTPUT "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.cc"
+            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.h"
+            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.cc"
+            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.h"
+        COMMAND $<TARGET_FILE:protobuf::protoc>
+        ARGS --cpp_out=${PROTO_OUTPUT_DIR}
+            --grpc_out=${PROTO_OUTPUT_DIR}
+            --plugin=protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>
+            -I${PROTO_DIR}
+            ${PROTO_FILE}
+        DEPENDS ${PROTO_FILE}
+        COMMENT "Generating protobuf and gRPC files for ${PROTO_NAME}"
+        VERBATIM
+    )
+endforeach()
 
 # Create proto library
-# add_library(proto_lib STATIC
-#     ${GENERATED_PROTO_SRCS}
-#     ${GENERATED_GRPC_SRCS}
-# )
+add_library(proto_lib STATIC
+    ${GENERATED_PROTO_SRCS}
+    ${GENERATED_GRPC_SRCS}
+)
 
-# target_include_directories(proto_lib PUBLIC
-#     ${PROTO_OUTPUT_DIR}
-# )
+target_include_directories(proto_lib PUBLIC
+    ${PROTO_OUTPUT_DIR}
+)
 
-# target_link_libraries(proto_lib PUBLIC
-#     protobuf::libprotobuf
-#     gRPC::grpc++
-#     gRPC::grpc++_reflection
-# )
+target_link_libraries(proto_lib PUBLIC
+    protobuf::libprotobuf
+    gRPC::grpc++
+    gRPC::grpc++_reflection
+)
 
 # Compiler warnings
 add_compile_options(

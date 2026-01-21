@@ -4,133 +4,133 @@ package mlinference.worker;
 
 import "common.proto";
 
-// Worker Service - Handles inference requests
-service WorkerService {
-    // Single prediction
-    rpc Predict(PredictRequest) returns (PredictResponse);
+// // Worker Service - Handles inference requests
+// service WorkerService {
+//     // Single prediction
+//     rpc Predict(PredictRequest) returns (PredictResponse);
     
-    // Batch prediction
-    rpc BatchPredict(BatchPredictRequest) returns (BatchPredictResponse);
+//     // Batch prediction
+//     rpc BatchPredict(BatchPredictRequest) returns (BatchPredictResponse);
     
-    // Streaming prediction
-    rpc PredictStream(stream PredictRequest) returns (stream PredictResponse);
+//     // Streaming prediction
+//     rpc PredictStream(stream PredictRequest) returns (stream PredictResponse);
     
-    // Model management
-    rpc LoadModel(LoadModelRequest) returns (LoadModelResponse);
-    rpc UnloadModel(UnloadModelRequest) returns (UnloadModelResponse);
-    rpc ListLoadedModels(ListLoadedModelsRequest) returns (ListLoadedModelsResponse);
-    rpc GetModelInfo(GetModelInfoRequest) returns (GetModelInfoResponse);
+//     // Model management
+//     rpc LoadModel(LoadModelRequest) returns (LoadModelResponse);
+//     rpc UnloadModel(UnloadModelRequest) returns (UnloadModelResponse);
+//     rpc ListLoadedModels(ListLoadedModelsRequest) returns (ListLoadedModelsResponse);
+//     rpc GetModelInfo(GetModelInfoRequest) returns (GetModelInfoResponse);
     
-    // Worker status
-    rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
-    rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
-    rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
-}
+//     // Worker status
+//     rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+//     rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+//     rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+// }
 
-// Predict Request/Response
-message PredictRequest {
-    string model_id = 1;
-    string version = 2;
-    map<string, mlinference.common.Tensor> inputs = 3;
-    string session_token = 4;
-    map<string, string> metadata = 5;
-}
+// // Predict Request/Response
+// message PredictRequest {
+//     string model_id = 1;
+//     string version = 2;
+//     map<string, mlinference.common.Tensor> inputs = 3;
+//     string session_token = 4;
+//     map<string, string> metadata = 5;
+// }
 
-message PredictResponse {
-    bool success = 1;
-    map<string, mlinference.common.Tensor> outputs = 2;
-    double inference_time_ms = 3;
-    string error_message = 4;
-    map<string, string> metadata = 5;
-}
+// message PredictResponse {
+//     bool success = 1;
+//     map<string, mlinference.common.Tensor> outputs = 2;
+//     double inference_time_ms = 3;
+//     string error_message = 4;
+//     map<string, string> metadata = 5;
+// }
 
-// Batch Predict
-message BatchPredictRequest {
-    string model_id = 1;
-    string version = 2;
-    repeated PredictRequest requests = 3;
-    string session_token = 4;
-}
+// // Batch Predict
+// message BatchPredictRequest {
+//     string model_id = 1;
+//     string version = 2;
+//     repeated PredictRequest requests = 3;
+//     string session_token = 4;
+// }
 
-message BatchPredictResponse {
-    bool success = 1;
-    repeated PredictResponse responses = 2;
-    double total_time_ms = 3;
-    string error_message = 4;
-}
+// message BatchPredictResponse {
+//     bool success = 1;
+//     repeated PredictResponse responses = 2;
+//     double total_time_ms = 3;
+//     string error_message = 4;
+// }
 
-// Model Management
-message LoadModelRequest {
-    string model_id = 1;
-    string version = 2;
-    string model_path = 3;
-}
+// // Model Management
+// message LoadModelRequest {
+//     string model_id = 1;
+//     string version = 2;
+//     string model_path = 3;
+// }
 
-message LoadModelResponse {
-    bool success = 1;
-    string message = 2;
-    mlinference.common.ModelInfo model_info = 3;
-}
+// message LoadModelResponse {
+//     bool success = 1;
+//     string message = 2;
+//     mlinference.common.ModelInfo model_info = 3;
+// }
 
-message UnloadModelRequest {
-    string model_id = 1;
-}
+// message UnloadModelRequest {
+//     string model_id = 1;
+// }
 
-message UnloadModelResponse {
-    bool success = 1;
-    string message = 2;
-}
+// message UnloadModelResponse {
+//     bool success = 1;
+//     string message = 2;
+// }
 
-message ListLoadedModelsRequest {
-}
+// message ListLoadedModelsRequest {
+// }
 
-message ListLoadedModelsResponse {
-    repeated string model_ids = 1;
-    map<string, mlinference.common.ModelInfo> models = 2;
-}
+// message ListLoadedModelsResponse {
+//     repeated string model_ids = 1;
+//     map<string, mlinference.common.ModelInfo> models = 2;
+// }
 
-message GetModelInfoRequest {
-    string model_id = 1;
-}
+// message GetModelInfoRequest {
+//     string model_id = 1;
+// }
 
-message GetModelInfoResponse {
-    bool success = 1;
-    mlinference.common.ModelInfo model_info = 2;
-    string error_message = 3;
-}
+// message GetModelInfoResponse {
+//     bool success = 1;
+//     mlinference.common.ModelInfo model_info = 2;
+//     string error_message = 3;
+// }
 
-// Worker Status
-message GetStatusRequest {
-}
+// // Worker Status
+// message GetStatusRequest {
+// }
 
-message GetStatusResponse {
-    string worker_id = 1;
-    mlinference.common.WorkerStatus status = 2;
-    mlinference.common.WorkerCapabilities capabilities = 3;
-    mlinference.common.WorkerMetrics metrics = 4;
-    repeated string loaded_models = 5;
-}
+// message GetStatusResponse {
+//     string worker_id = 1;
+//     mlinference.common.WorkerStatus status = 2;
+//     mlinference.common.WorkerCapabilities capabilities = 3;
+//     mlinference.common.WorkerMetrics metrics = 4;
+//     repeated string loaded_models = 5;
+// }
 
-message GetMetricsRequest {
-}
+// message GetMetricsRequest {
+// }
 
-message GetMetricsResponse {
-    mlinference.common.WorkerMetrics metrics = 1;
-    map<string, ModelMetrics> model_metrics = 2;
-}
+// message GetMetricsResponse {
+//     mlinference.common.WorkerMetrics metrics = 1;
+//     map<string, ModelMetrics> model_metrics = 2;
+// }
 
-message ModelMetrics {
-    uint64 total_requests = 1;
-    uint64 failed_requests = 2;
-    double avg_inference_time_ms = 3;
-    double total_inference_time_ms = 4;
-    int64 last_access_time = 5;
-}
+// message ModelMetrics {
+//     uint64 total_requests = 1;
+//     uint64 failed_requests = 2;
+//     double avg_inference_time_ms = 3;
+//     double total_inference_time_ms = 4;
+//     int64 last_access_time = 5;
+// }
 
-message HealthCheckRequest {
-}
+// message HealthCheckRequest {
+// }
 
-message HealthCheckResponse {
-    bool healthy = 1;
-    string message = 2;
-}
+// message HealthCheckResponse {
+//     bool healthy = 1;
+//     string message = 2;
+// }
