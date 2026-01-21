@@ -265,7 +265,7 @@ grpc::Status WorkerServiceImpl::GetMetrics(
     for (const auto& model_id : model_ids) {
         auto model_metrics = inference_engine_->get_model_metrics(model_id);
         
-        auto* proto_metrics = (*response->mutable_model_metrics())[model_id].mutable_total_requests();
+        auto* proto_metrics = (*response->mutable_model_metrics())[model_id].clear_total_requests();
         *proto_metrics = model_metrics.inference_count;
         (*response->mutable_model_metrics())[model_id].set_total_inference_time_ms(
             model_metrics.total_inference_time_ms

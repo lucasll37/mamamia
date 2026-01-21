@@ -95,12 +95,12 @@ target_link_libraries(proto_lib PUBLIC
     gRPC::grpc++_reflection
 )
 
-# # Compiler warnings
-# add_compile_options(
-#     -Wall -Wextra -Wpedantic
-#     $<$<CONFIG:Debug>:-g -O0>
-#     $<$<CONFIG:Release>:-O3>
-# )
+# Compiler warnings
+add_compile_options(
+    -Wall -Wextra -Wpedantic
+    # $<$<CONFIG:Debug>:-g -O0>
+    # $<$<CONFIG:Release>:-O3>
+)
 
 # Build Worker
 if(BUILD_WORKER)
