@@ -2,13 +2,11 @@ cmake_minimum_required(VERSION 3.20)
 
 # Client library
 add_library(inference_client STATIC
-    src/main.cpp
-    # src/inference_client.cpp
+    src/inference_client.cpp
 )
 
 target_include_directories(inference_client PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/proto
 )
 
 target_link_libraries(inference_client PUBLIC

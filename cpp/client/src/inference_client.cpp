@@ -1,6 +1,8 @@
 #include "client/inference_client.hpp"
 #include <iostream>
 #include <chrono>
+#include <thread>
+#include <cstdlib>
 
 namespace mlinference {
 namespace client {

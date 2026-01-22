@@ -112,3 +112,8 @@ add_compile_options(
 if(BUILD_WORKER)
     add_subdirectory(cpp/worker)
 endif()
+
+# Build Client
+if(BUILD_CLIENT)
+    add_subdirectory(cpp/client)
+endif()
