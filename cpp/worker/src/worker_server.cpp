@@ -265,14 +265,13 @@ grpc::Status WorkerServiceImpl::GetMetrics(
     for (const auto& model_id : model_ids) {
         auto model_metrics = inference_engine_->get_model_metrics(model_id);
         
-        auto* proto_metrics = (*response->mutable_model_metrics())[model_id].clear_total_requests();
-        *proto_metrics = model_metrics.inference_count;
-        (*response->mutable_model_metrics())[model_id].set_total_inference_time_ms(
-            model_metrics.total_inference_time_ms
-        );
-        (*response->mutable_model_metrics())[model_id].set_avg_inference_time_ms(
-            model_metrics.avg_inference_time_ms
-        );
+        // Get reference to the model metrics entry (creates if doesn't exist)
+        auto& proto_metrics = (*response->mutable_model_metrics())[model_id];
+        
+        // Set the fields
+        proto_metrics.set_total_requests(model_metrics.inference_count);
+        proto_metrics.set_total_inference_time_ms(model_metrics.total_inference_time_ms);
+        proto_metrics.set_avg_inference_time_ms(model_metrics.avg_inference_time_ms);
     }
     
     return grpc::Status::OK;
