@@ -162,24 +162,24 @@ cmake --build . -j${NUM_JOBS}
 
 # cd ..
 
-# # ========================================
-# # SUCESSO
-# # ========================================
-# echo ""
-# echo -e "${GREEN}========================================${NC}"
-# echo -e "${GREEN}✓ Build concluído com sucesso!${NC}"
-# echo -e "${GREEN}========================================${NC}"
-# echo ""
-# echo -e "${YELLOW}Executáveis:${NC}"
-# echo "  Worker:  ${BUILD_DIR}/bin/worker"
-# echo "  Client:  ${BUILD_DIR}/bin/client_example"
-# echo ""
-# echo -e "${YELLOW}Para executar:${NC}"
-# echo "  1. Terminal 1: ./${BUILD_DIR}/bin/worker"
-# echo "  2. Terminal 2: ./${BUILD_DIR}/bin/client_example"
-# echo ""
-# echo -e "${BLUE}Dicas:${NC}"
-# echo "  • Rebuild rápido: BUILD_TYPE=Debug ./build.sh"
-# echo "  • Usar outro perfil: CONAN_PROFILE=outro-perfil ./build.sh"
-# echo "  • Editar perfil: conan profile show ${CONAN_PROFILE}"
-# echo ""
+# ========================================
+# SUCESSO
+# ========================================
+echo ""
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}✓ Build concluído com sucesso!${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo ""
+echo -e "${YELLOW}Executáveis:${NC}"
+echo "  Worker:  ${BUILD_DIR}/bin/worker"
+echo "  Client:  ${BUILD_DIR}/bin/client_example"
+echo ""
+echo -e "${YELLOW}Para executar:${NC}"
+echo "  1. Terminal 1: ./${BUILD_DIR}/bin/worker"
+echo "  2. Terminal 2: ./${BUILD_DIR}/bin/client_example"
+echo ""
+echo -e "${BLUE}Dicas:${NC}"
+echo "  • Rebuild rápido: BUILD_TYPE=Debug ./build.sh"
+echo "  • Usar outro perfil: CONAN_PROFILE=outro-perfil ./build.sh"
+echo "  • Editar perfil: conan profile show ${CONAN_PROFILE}"
+echo ""

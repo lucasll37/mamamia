@@ -32,12 +32,18 @@ find_package(gRPC REQUIRED)
 message(STATUS "Found Protobuf via Conan")
 message(STATUS "Found gRPC via Conan")
 
-# Get protoc executable
-get_target_property(PROTOBUF_PROTOC_EXECUTABLE protobuf::protoc LOCATION)
+# Get protoc executable - CORREÇÃO AQUI
+get_target_property(PROTOBUF_PROTOC_EXECUTABLE protobuf::protoc IMPORTED_LOCATION_RELEASE)
+if(NOT PROTOBUF_PROTOC_EXECUTABLE)
+    get_target_property(PROTOBUF_PROTOC_EXECUTABLE protobuf::protoc IMPORTED_LOCATION)
+endif()
 message(STATUS "Found protoc: ${PROTOBUF_PROTOC_EXECUTABLE}")
 
-# Get grpc_cpp_plugin
-get_target_property(GRPC_CPP_PLUGIN_EXECUTABLE gRPC::grpc_cpp_plugin LOCATION)
+# Get grpc_cpp_plugin - CORREÇÃO AQUI
+get_target_property(GRPC_CPP_PLUGIN_EXECUTABLE gRPC::grpc_cpp_plugin IMPORTED_LOCATION_RELEASE)
+if(NOT GRPC_CPP_PLUGIN_EXECUTABLE)
+    get_target_property(GRPC_CPP_PLUGIN_EXECUTABLE gRPC::grpc_cpp_plugin IMPORTED_LOCATION)
+endif()
 message(STATUS "Found grpc_cpp_plugin: ${GRPC_CPP_PLUGIN_EXECUTABLE}")
 
 # Generate protobuf and gRPC files
@@ -63,33 +69,18 @@ foreach(PROTO_FILE ${PROTO_FILES})
     list(APPEND GENERATED_GRPC_SRCS "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.cc")
     list(APPEND GENERATED_GRPC_HDRS "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.h")
     
-    # add_custom_command(
-    #     OUTPUT "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.cc"
-    #            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.h"
-    #            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.cc"
-    #            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.h"
-    #     COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
-    #     ARGS --cpp_out=${PROTO_OUTPUT_DIR}
-    #          --grpc_out=${PROTO_OUTPUT_DIR}
-    #          --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN_EXECUTABLE}
-    #          -I${PROTO_DIR}
-    #          ${PROTO_FILE}
-    #     DEPENDS ${PROTO_FILE}
-    #     COMMENT "Generating protobuf and gRPC files for ${PROTO_NAME}"
-    # )
-
-# Apenas a parte relevante para protoc
+    # CORREÇÃO: Usar variáveis em vez de generator expressions
     add_custom_command(
         OUTPUT "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.cc"
-            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.h"
-            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.cc"
-            "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.h"
-        COMMAND $<TARGET_FILE:protobuf::protoc>
+               "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.pb.h"
+               "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.cc"
+               "${PROTO_OUTPUT_DIR}/${PROTO_NAME}.grpc.pb.h"
+        COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
         ARGS --cpp_out=${PROTO_OUTPUT_DIR}
-            --grpc_out=${PROTO_OUTPUT_DIR}
-            --plugin=protoc-gen-grpc=$<TARGET_FILE:gRPC::grpc_cpp_plugin>
-            -I${PROTO_DIR}
-            ${PROTO_FILE}
+             --grpc_out=${PROTO_OUTPUT_DIR}
+             --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN_EXECUTABLE}
+             -I${PROTO_DIR}
+             ${PROTO_FILE}
         DEPENDS ${PROTO_FILE}
         COMMENT "Generating protobuf and gRPC files for ${PROTO_NAME}"
         VERBATIM
@@ -115,26 +106,9 @@ target_link_libraries(proto_lib PUBLIC
 # Compiler warnings
 add_compile_options(
     -Wall -Wextra -Wpedantic
-    # $<$<CONFIG:Debug>:-g -O0>
-    # $<$<CONFIG:Release>:-O3>
 )
 
 # Build Worker
 if(BUILD_WORKER)
     add_subdirectory(cpp/worker)
 endif()
-
-# # Build Client
-# if(BUILD_CLIENT)
-#     add_subdirectory(cpp/client)
-# endif()
-
-# # Print configuration summary
-# message(STATUS "")
-# message(STATUS "ML Inference System Configuration:")
-# message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
-# message(STATUS "  C++ standard: ${CMAKE_CXX_STANDARD}")
-# message(STATUS "  Build worker: ${BUILD_WORKER}")
-# message(STATUS "  Build client: ${BUILD_CLIENT}")
-# message(STATUS "  GPU support: ${ENABLE_GPU}")
-# message(STATUS "")
