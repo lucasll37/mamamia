@@ -1,0 +1,83 @@
+# ============================================
+# ML Inference System - Docker Compose
+# ============================================
+# 
+# Services:
+#   - worker-cpu: Worker node (CPU inference)
+#   - worker-gpu: Worker node (GPU inference) 
+#   - client: Client example
+#
+# Usage:
+#   docker-compose up --build
+#   docker-compose run --rm client worker-cpu:50052
+#
+# ============================================
+
+services:
+  # ============================================
+  # Worker Node - CPU
+  # ============================================
+  worker-cpu:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.worker
+      target: runtime-cpu
+      args:
+        ENABLE_GPU: "False"
+        ONNX_VERSION: "1.23.2"
+        CMAKE_BUILD_TYPE: "Release"
+    image: mlinference-worker:cpu
+    container_name: ml-worker-cpu
+    hostname: worker-cpu
+    ports:
+      - "50052:50052"
+    volumes:
+      # Mount models directory (read-only)
+      - ./python/models:/models:ro
+    environment:
+      - ENABLE_GPU=False
+      - LOG_LEVEL=info
+    command: [
+      "--id", "worker-cpu-1",
+      "--address", "0.0.0.0:50052",
+      "--threads", "4"
+    ]
+    healthcheck:
+      test: ["CMD", "/app/bin/worker", "--help"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - ml-inference-net
+
+  # ============================================
+  # Client
+  # ============================================
+  client:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.client
+      args:
+        CMAKE_BUILD_TYPE: "Release"
+    image: mlinference-client:latest
+    container_name: ml-client
+    hostname: client
+    depends_on:
+      - worker-cpu
+    environment:
+      - CLIENT_SERVER_ADDRESS=worker-cpu:50052
+    command: ["worker-cpu:50052"]
+    networks:
+      - ml-inference-net
+    # profiles:
+    #   - client
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  ml-inference-net:
+    driver: bridge
+    name: ml-inference-net

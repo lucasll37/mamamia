@@ -145,14 +145,14 @@ COPY --from=onnx-installer /opt/onnxruntime/lib /usr/local/lib/
 RUN ldconfig
 
 # Create app directories
-RUN mkdir -p /app/bin /app/data /models /models_cache /etc/ml-inference
+RUN mkdir -p /app/bin /app/data /app/models /models_cache /etc/ml-inference
 
 # Copy compiled binary
 COPY --from=app-builder /app/build/bin/worker /app/bin/
 
 # Create non-root user
 RUN useradd -m -u 1000 -s /bin/bash mluser && \
-    chown -R mluser:mluser /app /models /models_cache /etc/ml-inference
+    chown -R mluser:mluser /app /app/models /models_cache /etc/ml-inference
 
 # Set working directory
 WORKDIR /app
@@ -193,14 +193,14 @@ COPY --from=onnx-installer /opt/onnxruntime/lib /usr/local/lib/
 RUN ldconfig
 
 # Create app directories
-RUN mkdir -p /app/bin /app/data /models /models_cache /etc/ml-inference
+RUN mkdir -p /app/bin /app/data /app/models /models_cache /etc/ml-inference
 
 # Copy compiled binary
 COPY --from=app-builder /app/build/bin/worker /app/bin/
 
 # Create non-root user
 RUN useradd -m -u 1000 -s /bin/bash mluser && \
-    chown -R mluser:mluser /app /models /models_cache /etc/ml-inference
+    chown -R mluser:mluser /app /app/models /models_cache /etc/ml-inference
 
 # Set working directory
 WORKDIR /app

@@ -59,8 +59,7 @@ int main(int argc, char** argv) {
     // Load a model
     std::cout << "Loading model..." << std::endl;
     std::string model_id = "test-model";
-    std::string model_path = "./python/models/simple_classifier.onnx";
-    // std::string model_path = "./python/models/simple_linear.onnx";
+    std::string model_path = "/models/simple_classifier.onnx";
     
     if (client.load_model(model_id, model_path)) {
         std::cout << "✓ Model loaded successfully" << std::endl;

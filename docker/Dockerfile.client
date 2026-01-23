@@ -1,0 +1,143 @@
+# ============================================
+# Multi-stage Dockerfile for Client
+# Compiles from source - CPU only
+# ============================================
+#
+# USAGE:
+#   docker build -f Dockerfile.client -t client:latest .
+#
+# RUN:
+#   docker run --rm -it \
+#     --network host \
+#     client:latest localhost:50052
+#
+# ============================================
+
+# ============================================
+# Stage 1: Build Environment
+# ============================================
+FROM ubuntu:22.04 AS builder
+
+# Prevent interactive prompts during installation
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Build arguments
+ARG CMAKE_BUILD_TYPE=Release
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    # Build tools
+    build-essential \
+    cmake \
+    git \
+    wget \
+    curl \
+    pkg-config \
+    file \
+    # Conan dependencies
+    python3 \
+    python3-pip \
+    python3-venv \
+    # Additional tools
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Conan 2.x
+RUN pip3 install --no-cache-dir "conan>=2.0.0"
+
+# Configure Conan
+RUN conan profile detect --force
+
+# ============================================
+# Stage 2: Conan Dependencies
+# ============================================
+FROM builder AS conan-deps
+
+# Set working directory
+WORKDIR /app
+
+# Copy Conan configuration
+COPY conanfile.py .
+
+# Install Conan dependencies (no GPU)
+RUN conan install . \
+    --output-folder=build \
+    --build=missing \
+    --settings=build_type=${CMAKE_BUILD_TYPE} \
+    -o enable_gpu=False
+
+# ============================================
+# Stage 3: Build Application
+# ============================================
+FROM conan-deps AS app-builder
+
+ARG CMAKE_BUILD_TYPE
+
+# Copy source code
+COPY CMakeLists.txt .
+COPY CMakeUserPresets.json .
+COPY proto/ ./proto/
+COPY cpp/ ./cpp/
+
+# Create build directory and compile
+WORKDIR /app/build
+
+RUN cmake .. \
+    -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake \
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+    -DBUILD_WORKER=OFF \
+    -DBUILD_CLIENT=ON \
+    -DENABLE_GPU=OFF \
+    && cmake --build . --config ${CMAKE_BUILD_TYPE} -j$(nproc)
+
+# Verify binary was created
+RUN ls -lh /app/build/bin/client_example && \
+    file /app/build/bin/client_example && \
+    ldd /app/build/bin/client_example
+
+# ============================================
+# Stage 4: Runtime Image
+# ============================================
+FROM ubuntu:22.04 AS runtime
+
+# Install minimal runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libstdc++6 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directories
+RUN mkdir -p /app/bin /app/data
+
+# Copy compiled binary
+COPY --from=app-builder /app/build/bin/client_example /app/bin/
+
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash mluser && \
+    chown -R mluser:mluser /app
+
+# Set working directory
+WORKDIR /app
+
+# Switch to non-root user
+USER mluser
+
+# Environment variables
+ENV CLIENT_SERVER_ADDRESS=localhost:50052
+
+# Health check (verify binary is executable)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD /app/bin/client_example --help > /dev/null 2>&1 || exit 1
+
+# Set entrypoint
+ENTRYPOINT ["/app/bin/client_example"]
+
+# Default: connect to localhost:50052
+CMD ["localhost:50052"]
+
+# ============================================
+# Image Metadata
+# ============================================
+LABEL maintainer="ML Inference System"
+LABEL description="C++ gRPC Client for ML Inference System"
+LABEL version="1.0.0"
