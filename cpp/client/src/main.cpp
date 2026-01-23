@@ -59,7 +59,8 @@ int main(int argc, char** argv) {
     // Load a model
     std::cout << "Loading model..." << std::endl;
     std::string model_id = "test-model";
-    std::string model_path = "/models/test_model.onnx";
+    std::string model_path = "./python/models/simple_classifier.onnx";
+    // std::string model_path = "./python/models/simple_linear.onnx";
     
     if (client.load_model(model_id, model_path)) {
         std::cout << "✓ Model loaded successfully" << std::endl;
@@ -84,7 +85,8 @@ int main(int argc, char** argv) {
     
     // Create input data
     std::map<std::string, std::vector<float>> inputs;
-    std::vector<float> input_data = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
+    std::vector<float> input_data = {1.0f, 2.0f, 3.0f, 4.0f};
+    // std::vector<float> input_data = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
     inputs["input"] = input_data;
     
     print_vector("Input", input_data);

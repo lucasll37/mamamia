@@ -1,0 +1,49 @@
+# Python dependencies for ML Inference System
+# Core packages only - tested and working
+
+# ONNX (Core)
+onnx==1.16.1
+numpy>=1.24.0,<2.0.0
+protobuf>=3.20.2,<5.0.0
+
+# ONNX Runtime
+onnxruntime==1.23.2
+
+# ============================================
+# OPTIONAL: Uncomment only what you need
+# ============================================
+
+# PyTorch Model Conversion
+# torch>=2.0.0
+# torchvision>=0.15.0
+
+# TensorFlow Model Conversion
+# Note: tf2onnx requires protobuf~=3.20, which may conflict
+# Uncomment both lines together if needed:
+# tensorflow>=2.13.0
+# tf2onnx>=1.16.0
+
+# Scikit-learn Model Conversion
+# scikit-learn>=1.3.0
+# skl2onnx>=1.16.0
+
+# Model Visualization
+# netron>=7.0.0
+
+# ============================================
+# Installation Notes
+# ============================================
+# 
+# For PyTorch models:
+#   pip install torch torchvision
+#
+# For TensorFlow models:
+#   pip install tensorflow tf2onnx
+#   (May require downgrading protobuf)
+#
+# For scikit-learn models:
+#   pip install scikit-learn skl2onnx
+#
+# To visualize models:
+#   pip install netron
+#   netron your_model.onnx
