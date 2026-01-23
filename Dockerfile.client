@@ -1,0 +1,224 @@
+# ============================================
+# Multi-stage Dockerfile for Worker Node
+# Compiles from source with ONNX Runtime support
+# ============================================
+#
+# USAGE:
+#   CPU Version:
+#     docker build -f Dockerfile.worker --target runtime-cpu -t worker:cpu .
+#   
+#   GPU Version:
+#     docker build -f Dockerfile.worker --target runtime-gpu -t worker:gpu .
+#
+# ============================================
+
+# ============================================
+# Stage 1: Build Environment
+# ============================================
+FROM ubuntu:22.04 AS builder
+
+# Prevent interactive prompts during installation
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Build arguments
+ARG ENABLE_GPU=False
+ARG ONNX_VERSION=1.23.2
+ARG CMAKE_BUILD_TYPE=Release
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    # Build tools
+    build-essential \
+    cmake \
+    git \
+    wget \
+    curl \
+    pkg-config \
+    file \
+    # Conan dependencies
+    python3 \
+    python3-pip \
+    python3-venv \
+    # Additional tools
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Conan 2.x
+RUN pip3 install --no-cache-dir "conan>=2.0.0"
+
+# Configure Conan
+RUN conan profile detect --force
+
+# ============================================
+# Stage 2: Install ONNX Runtime
+# ============================================
+FROM builder AS onnx-installer
+
+ARG ENABLE_GPU
+ARG ONNX_VERSION
+
+WORKDIR /tmp/onnx
+
+# Download and install ONNX Runtime
+RUN if [ "$ENABLE_GPU" = "True" ]; then \
+        echo "Installing ONNX Runtime GPU version ${ONNX_VERSION}..." && \
+        wget -q https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_VERSION}/onnxruntime-linux-x64-gpu-${ONNX_VERSION}.tgz && \
+        tar -xzf onnxruntime-linux-x64-gpu-${ONNX_VERSION}.tgz && \
+        mkdir -p /opt/onnxruntime && \
+        cp -r onnxruntime-linux-x64-gpu-${ONNX_VERSION}/* /opt/onnxruntime/; \
+    else \
+        echo "Installing ONNX Runtime CPU version ${ONNX_VERSION}..." && \
+        wget -q https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_VERSION}/onnxruntime-linux-x64-${ONNX_VERSION}.tgz && \
+        tar -xzf onnxruntime-linux-x64-${ONNX_VERSION}.tgz && \
+        mkdir -p /opt/onnxruntime && \
+        cp -r onnxruntime-linux-x64-${ONNX_VERSION}/* /opt/onnxruntime/; \
+    fi && \
+    rm -rf /tmp/onnx
+
+# Update library cache
+RUN echo "/opt/onnxruntime/lib" > /etc/ld.so.conf.d/onnxruntime.conf && ldconfig
+
+# ============================================
+# Stage 3: Conan Dependencies
+# ============================================
+FROM onnx-installer AS conan-deps
+
+# Set working directory
+WORKDIR /app
+
+# Copy Conan configuration
+COPY conanfile.py .
+
+# Install Conan dependencies
+RUN conan install . \
+    --output-folder=build \
+    --build=missing \
+    --settings=build_type=${CMAKE_BUILD_TYPE} \
+    -o enable_gpu=${ENABLE_GPU}
+
+# ============================================
+# Stage 4: Build Application
+# ============================================
+FROM conan-deps AS app-builder
+
+ARG CMAKE_BUILD_TYPE
+ARG ENABLE_GPU
+
+# Copy source code
+COPY CMakeLists.txt .
+COPY CMakeUserPresets.json .
+COPY proto/ ./proto/
+COPY cpp/ ./cpp/
+
+# Create build directory and compile
+WORKDIR /app/build
+
+RUN cmake .. \
+    -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake \
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+    -DBUILD_WORKER=ON \
+    -DBUILD_CLIENT=OFF \
+    -DENABLE_GPU=${ENABLE_GPU} \
+    -DONNXRUNTIME_ROOT_DIR=/opt/onnxruntime \
+    && cmake --build . --config ${CMAKE_BUILD_TYPE} -j$(nproc)
+
+# Verify binary was created
+RUN ls -lh /app/build/bin/worker && \
+    file /app/build/bin/worker && \
+    ldd /app/build/bin/worker
+
+# ============================================
+# Stage 5: Runtime Image (CPU)
+# ============================================
+FROM ubuntu:22.04 AS runtime-cpu
+
+# Install minimal runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libstdc++6 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy ONNX Runtime libraries
+COPY --from=onnx-installer /opt/onnxruntime/lib /usr/local/lib/
+
+# Update library cache
+RUN ldconfig
+
+# Create app directories
+RUN mkdir -p /app/bin /app/data /models /models_cache /etc/ml-inference
+
+# Copy compiled binary
+COPY --from=app-builder /app/build/bin/worker /app/bin/
+
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash mluser && \
+    chown -R mluser:mluser /app /models /models_cache /etc/ml-inference
+
+# Set working directory
+WORKDIR /app
+
+# Switch to non-root user
+USER mluser
+
+# Expose gRPC port
+EXPOSE 50052
+
+# Environment variables
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+ENV ENABLE_GPU=False
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD /app/bin/worker --help > /dev/null || exit 1
+
+# Set entrypoint
+ENTRYPOINT ["/app/bin/worker"]
+CMD ["--address", "0.0.0.0:50052", "--threads", "4"]
+
+# ============================================
+# Stage 6: Runtime Image (GPU)
+# ============================================
+FROM nvidia/cuda:12.0.0-runtime-ubuntu22.04 AS runtime-gpu
+
+# Install minimal runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libstdc++6 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy ONNX Runtime libraries
+COPY --from=onnx-installer /opt/onnxruntime/lib /usr/local/lib/
+
+# Update library cache
+RUN ldconfig
+
+# Create app directories
+RUN mkdir -p /app/bin /app/data /models /models_cache /etc/ml-inference
+
+# Copy compiled binary
+COPY --from=app-builder /app/build/bin/worker /app/bin/
+
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash mluser && \
+    chown -R mluser:mluser /app /models /models_cache /etc/ml-inference
+
+# Set working directory
+WORKDIR /app
+
+# Switch to non-root user
+USER mluser
+
+# Expose gRPC port
+EXPOSE 50052
+
+# Environment variables
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+ENV ENABLE_GPU=True
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD /app/bin/worker --help > /dev/null || exit 1
+
+# Set entrypoint
+ENTRYPOINT ["/app/bin/worker"]
+CMD ["--address", "0.0.0.0:50052", "--gpu", "--threads", "4"]
