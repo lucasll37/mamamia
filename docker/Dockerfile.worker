@@ -128,7 +128,55 @@ RUN ls -lh /app/build/bin/worker && \
     ldd /app/build/bin/worker
 
 # ============================================
-# Stage 5: Runtime Image (CPU)
+# Stage 5: Runtime Image (GPU)
+# ============================================
+FROM nvidia/cuda:12.0.0-runtime-ubuntu22.04 AS runtime-gpu
+
+# Install minimal runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libstdc++6 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy ONNX Runtime libraries
+COPY --from=onnx-installer /opt/onnxruntime/lib /usr/local/lib/
+
+# Update library cache
+RUN ldconfig
+
+# Create app directories
+RUN mkdir -p /app/bin /app/data /models /models_cache /etc/ml-inference
+
+# Copy compiled binary
+COPY --from=app-builder /app/build/bin/worker /app/bin/
+
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash mluser && \
+    chown -R mluser:mluser /app /models /models_cache /etc/ml-inference
+
+# Set working directory
+WORKDIR /app
+
+# Switch to non-root user
+USER mluser
+
+# Expose gRPC port
+EXPOSE 50052
+
+# Environment variables
+ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+ENV ENABLE_GPU=True
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD /app/bin/worker --help > /dev/null || exit 1
+
+# Set entrypoint
+ENTRYPOINT ["/app/bin/worker"]
+CMD ["--address", "0.0.0.0:50052", "--gpu", "--threads", "4"]
+
+# ============================================
+# Stage 6: Runtime Image (CPU)
 # ============================================
 FROM ubuntu:22.04 AS runtime-cpu
 
@@ -174,51 +222,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 # Set entrypoint
 ENTRYPOINT ["/app/bin/worker"]
 CMD ["--address", "0.0.0.0:50052", "--threads", "4"]
-
-# ============================================
-# Stage 6: Runtime Image (GPU)
-# ============================================
-FROM nvidia/cuda:12.0.0-runtime-ubuntu22.04 AS runtime-gpu
-
-# Install minimal runtime dependencies
-RUN apt-get update && apt-get install -y \
-    libstdc++6 \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy ONNX Runtime libraries
-COPY --from=onnx-installer /opt/onnxruntime/lib /usr/local/lib/
-
-# Update library cache
-RUN ldconfig
-
-# Create app directories
-RUN mkdir -p /app/bin /app/data /app/models /models_cache /etc/ml-inference
-
-# Copy compiled binary
-COPY --from=app-builder /app/build/bin/worker /app/bin/
-
-# Create non-root user
-RUN useradd -m -u 1000 -s /bin/bash mluser && \
-    chown -R mluser:mluser /app /app/models /models_cache /etc/ml-inference
-
-# Set working directory
-WORKDIR /app
-
-# Switch to non-root user
-USER mluser
-
-# Expose gRPC port
-EXPOSE 50052
-
-# Environment variables
-ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-ENV ENABLE_GPU=True
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD /app/bin/worker --help > /dev/null || exit 1
-
-# Set entrypoint
-ENTRYPOINT ["/app/bin/worker"]
-CMD ["--address", "0.0.0.0:50052", "--gpu", "--threads", "4"]

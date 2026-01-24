@@ -1,0 +1,432 @@
+# Dockerfile multi-stage para ambiente MIXR
+# Autor: Lucas
+# Data: 2026-01-24
+
+# ============================================
+# STAGE 1: BASE - Sistema e Prerequisitos
+# ============================================
+FROM ubuntu:22.04 AS base
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y \
+    libftgl-dev \
+    libfreetype6-dev \
+    freeglut3-dev \
+    libfontconfig-dev \
+    libexpat-dev \
+    build-essential \
+    cmake \
+    m4 \
+    wget \
+    curl \
+    git \
+    ca-certificates \
+    unzip \
+    zip \
+    tar \
+    gzip \
+    bzip2 \
+    xz-utils \
+    file \
+    p7zip-full \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================
+# STAGE 2: DOWNLOADER - Download de Arquivos
+# ============================================
+FROM base AS downloader
+
+ARG MIXR_3RDPARTY_URL="https://s3.amazonaws.com/mixr-platform/releases/stable_v18.01/mixr-3rdpartysrc_v18.12.tgz"
+ARG MIXR_SOURCE_URL="https://s3.amazonaws.com/mixr-platform/releases/stable_v18.01/mixr_v18.01.zip"
+# ARG MIXR_EXAMPLES_URL="https://s3.amazonaws.com/mixr-platform/releases/stable_v18.01/mixr-examples_v18.01.zip"
+
+WORKDIR /downloads
+
+RUN set -e; \
+    echo "===================================="; \
+    echo "Baixando arquivos MIXR..."; \
+    echo "===================================="; \
+    \
+    if [ -n "${MIXR_3RDPARTY_URL}" ]; then \
+        echo "Baixando mixr-3rdpartysrc de: ${MIXR_3RDPARTY_URL}"; \
+        wget --no-check-certificate -O mixr-3rdparty "${MIXR_3RDPARTY_URL}" || \
+        curl -k -L -o mixr-3rdparty "${MIXR_3RDPARTY_URL}"; \
+    else \
+        echo "AVISO: MIXR_3RDPARTY_URL não definida"; \
+        touch mixr-3rdparty; \
+    fi; \
+    \
+    if [ -n "${MIXR_SOURCE_URL}" ]; then \
+        echo "Baixando MIXR source de: ${MIXR_SOURCE_URL}"; \
+        wget --no-check-certificate -O mixr-source "${MIXR_SOURCE_URL}" || \
+        curl -k -L -o mixr-source "${MIXR_SOURCE_URL}"; \
+    else \
+        echo "AVISO: MIXR_SOURCE_URL não definida"; \
+        touch mixr-source; \
+    fi; \
+    \
+    # if [ -n "${MIXR_EXAMPLES_URL}" ]; then \
+    #     echo "Baixando MIXR examples de: ${MIXR_EXAMPLES_URL}"; \
+    #     wget --no-check-certificate -O mixr-examples "${MIXR_EXAMPLES_URL}" || \
+    #     curl -k -L -o mixr-examples "${MIXR_EXAMPLES_URL}"; \
+    # else \
+    #     echo "AVISO: MIXR_EXAMPLES_URL não definida"; \
+    #     touch mixr-examples; \
+    # fi; \
+    \
+    echo ""; \
+    echo "===================================="; \
+    echo "Downloads concluídos!"; \
+    echo "===================================="; \
+    echo "Arquivos baixados:"; \
+    ls -lh /downloads/; \
+    echo ""; \
+    echo "Detectando tipos de arquivo:"; \
+    for f in /downloads/*; do \
+        if [ -f "$f" ] && [ -s "$f" ]; then \
+            echo "  $(basename $f): $(file -b $f)"; \
+        fi; \
+    done
+
+# ============================================
+# STAGE 3: EXTRACTOR - Extração de Arquivos
+# ============================================
+FROM base AS extractor
+
+COPY --from=downloader /downloads /downloads
+
+WORKDIR /opt
+
+RUN set -e; \
+    echo "===================================="; \
+    echo "Extraindo arquivos..."; \
+    echo "===================================="; \
+    \
+    mkdir -p /opt/mixr-platform /opt/mixr-examples; \
+    \
+    # Função universal de extração
+    extract_file() { \
+        local file="$1"; \
+        local dest="$2"; \
+        local name="$3"; \
+        \
+        echo ""; \
+        echo ">>> Processando: $name"; \
+        echo "    Arquivo: $file"; \
+        echo "    Destino: $dest"; \
+        \
+        if [ ! -f "$file" ] || [ ! -s "$file" ]; then \
+            echo "    ✗ Arquivo não existe ou está vazio"; \
+            return 1; \
+        fi; \
+        \
+        file_type=$(file -b "$file"); \
+        echo "    Tipo: $file_type"; \
+        \
+        cd "$dest" || return 1; \
+        \
+        # ZIP archives
+        if echo "$file_type" | grep -qi "zip"; then \
+            echo "    Método: unzip"; \
+            unzip -q "$file" || unzip -q -o "$file" || return 1; \
+        # GZIP compressed
+        elif echo "$file_type" | grep -qi "gzip"; then \
+            echo "    Método: gunzip + tar"; \
+            gunzip -c "$file" | tar xf - 2>/dev/null || tar xzf "$file" || return 1; \
+        # BZIP2 compressed
+        elif echo "$file_type" | grep -qi "bzip2"; then \
+            echo "    Método: bunzip2 + tar"; \
+            bunzip2 -c "$file" | tar xf - || tar xjf "$file" || return 1; \
+        # XZ compressed
+        elif echo "$file_type" | grep -qi "xz"; then \
+            echo "    Método: unxz + tar"; \
+            unxz -c "$file" | tar xf - || tar xJf "$file" || return 1; \
+        # TAR archive
+        elif echo "$file_type" | grep -qi "tar"; then \
+            echo "    Método: tar"; \
+            tar xf "$file" || return 1; \
+        # 7-Zip
+        elif echo "$file_type" | grep -qi "7-zip"; then \
+            echo "    Método: 7z"; \
+            7z x "$file" || return 1; \
+        # Fallback: tenta todos os métodos
+        else \
+            echo "    ⚠ Formato não reconhecido, tentando métodos múltiplos..."; \
+            if unzip -q "$file" 2>/dev/null; then \
+                echo "    ✓ Sucesso com unzip"; \
+            elif tar xf "$file" 2>/dev/null; then \
+                echo "    ✓ Sucesso com tar"; \
+            elif 7z x "$file" 2>/dev/null; then \
+                echo "    ✓ Sucesso com 7z"; \
+            else \
+                echo "    ✗ Falha em todos os métodos"; \
+                return 1; \
+            fi; \
+        fi; \
+        \
+        echo "    ✓ Extração concluída"; \
+        return 0; \
+    }; \
+    \
+    # Extrai código de terceiros
+    extract_file "/downloads/mixr-3rdparty" "/opt/mixr-platform" "MIXR 3rd Party"; \
+    \
+    # Extrai código fonte MIXR
+    if extract_file "/downloads/mixr-source" "/opt" "MIXR Source"; then \
+        # Cria link simbólico para /opt/mixr
+        if [ ! -d "/opt/mixr" ]; then \
+            MIXR_DIR=$(find /opt -maxdepth 1 -type d -name "mixr*" ! -name "mixr-platform" ! -name "mixr-3rdparty" ! -name "mixr-examples" | head -1); \
+            if [ -n "$MIXR_DIR" ]; then \
+                echo "    Criando link: $MIXR_DIR -> /opt/mixr"; \
+                ln -s "$MIXR_DIR" /opt/mixr; \
+            fi; \
+        fi; \
+    fi; \
+    \
+    # Extrai exemplos
+    # extract_file "/downloads/mixr-examples" "/opt/mixr-examples" "MIXR Examples"; \
+    \
+    echo ""; \
+    echo "===================================="; \
+    echo "Extração concluída!"; \
+    echo "===================================="; \
+    echo "Estrutura de /opt:"; \
+    ls -la /opt/; \
+    echo ""; \
+    if [ -d "/opt/mixr" ]; then \
+        echo "Conteúdo de /opt/mixr (primeiras 20 linhas):"; \
+        ls -la /opt/mixr/ | head -20; \
+    fi; \
+    if [ -d "/opt/mixr-platform/mixr-3rdpartysrc" ]; then \
+        echo ""; \
+        echo "✓ mixr-3rdpartysrc encontrado"; \
+    fi;
+
+# ============================================
+# STAGE 4: BUILDER-3RDPARTY - Compilação de Dependências
+# ============================================
+FROM base AS builder-3rdparty
+
+ENV MIXR_ROOT=/opt/mixr
+ENV MIXR_3RDPARTY=/opt/mixr-3rdparty
+ENV PATH="${MIXR_ROOT}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="${MIXR_ROOT}/lib:${MIXR_3RDPARTY}/lib"
+
+COPY --from=extractor /opt /opt
+
+RUN set -e; \
+    if [ -d "/opt/mixr-platform/mixr-3rdpartysrc" ] && [ -d "/opt/mixr" ]; then \
+        echo "===================================="; \
+        echo "Compilando dependências de terceiros..."; \
+        echo "===================================="; \
+        cd /opt/mixr && \
+        if [ -f "setenv.sh" ]; then \
+            echo "Sourcing setenv.sh..."; \
+            . ./setenv.sh; \
+        fi && \
+        cd /opt/mixr-platform/mixr-3rdpartysrc && \
+        if [ -f "build_libs.sh" ]; then \
+            echo "Sourcing build_libs.sh..."; \
+            . ./build_libs.sh && \
+            echo "Executando install_all..."; \
+            install_all; \
+            echo "✓ Dependências compiladas com sucesso!"; \
+        else \
+            echo "✗ AVISO: build_libs.sh não encontrado"; \
+            ls -la /opt/mixr-platform/mixr-3rdpartysrc/; \
+        fi; \
+    else \
+        echo "✗ AVISO: Pulando compilação de dependências"; \
+        echo "Conteúdo de /opt:"; \
+        ls -la /opt/; \
+    fi
+
+# ============================================
+# STAGE 5: BUILDER-MIXR - Compilação de MIXR
+# ============================================
+FROM builder-3rdparty AS builder-mixr
+
+RUN set -e; \
+    if [ -d "/opt/mixr/src" ]; then \
+        echo "===================================="; \
+        echo "Compilando bibliotecas MIXR..."; \
+        echo "===================================="; \
+        cd /opt/mixr && \
+        if [ -f "setenv.sh" ]; then \
+            . ./setenv.sh; \
+        fi && \
+        cd src && \
+        if [ -f "Makefile" ] || [ -f "makefile" ]; then \
+            echo "Executando make..."; \
+            make -j$(nproc) && \
+            echo "Executando make install..."; \
+            make install; \
+            echo "✓ MIXR compilado com sucesso!"; \
+        else \
+            echo "✗ AVISO: Makefile não encontrado"; \
+            ls -la /opt/mixr/src/; \
+        fi; \
+    else \
+        echo "✗ AVISO: Pulando compilação MIXR"; \
+        echo "Estrutura de /opt/mixr:"; \
+        ls -la /opt/mixr/ 2>/dev/null || echo "Diretório não existe"; \
+    fi
+
+# # ============================================
+# # STAGE 6: BUILDER-EXAMPLES - Compilação de Exemplos
+# # ============================================
+# FROM builder-mixr AS builder-examples
+
+# RUN set -e; \
+#     if [ -d "/opt/mixr-examples" ]; then \
+#         echo "===================================="; \
+#         echo "Compilando exemplos MIXR..."; \
+#         echo "===================================="; \
+#         \
+#         SRC_DIR=""; \
+#         if [ -d "/opt/mixr-examples/src" ]; then \
+#             SRC_DIR="/opt/mixr-examples/src"; \
+#         elif [ -d "/opt/mixr-examples/examples/src" ]; then \
+#             SRC_DIR="/opt/mixr-examples/examples/src"; \
+#         else \
+#             SRC_DIR=$(find /opt/mixr-examples -type d -name "src" | head -1); \
+#         fi; \
+#         \
+#         if [ -n "$SRC_DIR" ] && [ -d "$SRC_DIR" ]; then \
+#             cd /opt/mixr && \
+#             if [ -f "setenv.sh" ]; then \
+#                 . ./setenv.sh; \
+#             fi && \
+#             cd "$SRC_DIR" && \
+#             if [ -f "Makefile" ] || [ -f "makefile" ]; then \
+#                 echo "Encontrado Makefile em: $SRC_DIR"; \
+#                 make -j$(nproc); \
+#                 echo "✓ Exemplos compilados com sucesso!"; \
+#             else \
+#                 echo "✗ AVISO: Makefile não encontrado em $SRC_DIR"; \
+#                 ls -la "$SRC_DIR"; \
+#             fi; \
+#         else \
+#             echo "✗ AVISO: Diretório src não encontrado em exemplos"; \
+#             echo "Estrutura de /opt/mixr-examples:"; \
+#             find /opt/mixr-examples -type d | head -20; \
+#         fi; \
+#     else \
+#         echo "✗ AVISO: Diretório de exemplos não encontrado"; \
+#     fi
+
+# ============================================
+# STAGE 7: RUNTIME - Imagem Final
+# ============================================
+FROM base AS runtime
+
+LABEL maintainer="Lucas <lucas@ita.br>"
+LABEL description="Ambiente Docker completo para desenvolvimento com MIXR"
+LABEL version="1.0"
+
+RUN apt-get update && apt-get install -y \
+    vim \
+    nano \
+    procps \
+    gdb \
+    valgrind \
+    strace \
+    tree \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV MIXR_ROOT=/opt/mixr
+ENV MIXR_3RDPARTY=/opt/mixr-3rdparty
+ENV PATH="${MIXR_ROOT}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="${MIXR_ROOT}/lib:${MIXR_3RDPARTY}/lib"
+
+COPY --from=builder-mixr /opt/mixr /opt/mixr
+COPY --from=builder-mixr /opt/mixr-3rdparty /opt/mixr-3rdparty
+# COPY --from=builder-examples /opt/mixr-examples /opt/mixr-examples
+
+RUN mkdir -p /workspace
+
+RUN cat > /etc/profile.d/mixr-env.sh <<'EOF'
+#!/bin/bash
+export MIXR_ROOT=/opt/mixr
+export MIXR_3RDPARTY=/opt/mixr-3rdparty
+
+if [ -d "${MIXR_ROOT}/bin" ]; then
+    export PATH="${MIXR_ROOT}/bin:${PATH}"
+fi
+
+if [ -d "${MIXR_ROOT}/lib" ]; then
+    export LD_LIBRARY_PATH="${MIXR_ROOT}/lib:${LD_LIBRARY_PATH}"
+fi
+
+if [ -d "${MIXR_3RDPARTY}/lib" ]; then
+    export LD_LIBRARY_PATH="${MIXR_3RDPARTY}/lib:${LD_LIBRARY_PATH}"
+fi
+
+if [ -f "${MIXR_ROOT}/setenv.sh" ]; then
+    source "${MIXR_ROOT}/setenv.sh" 2>/dev/null
+fi
+
+alias mixr-examples="cd /opt/mixr-examples"
+alias mixr-src="cd /opt/mixr/src"
+alias mixr-root="cd /opt/mixr"
+alias workspace="cd /workspace"
+
+echo "╔════════════════════════════════════════╗"
+echo "║   Ambiente MIXR - Ready for Development ║"
+echo "╚════════════════════════════════════════╝"
+echo ""
+echo "MIXR_ROOT: ${MIXR_ROOT}"
+if [ -d "${MIXR_3RDPARTY}" ]; then
+    echo "MIXR_3RDPARTY: ${MIXR_3RDPARTY}"
+fi
+echo ""
+echo "Comandos: mixr-root | mixr-src | mixr-examples | workspace | mixr-status"
+echo ""
+EOF
+
+RUN chmod +x /etc/profile.d/mixr-env.sh && \
+    echo "source /etc/profile.d/mixr-env.sh" >> /root/.bashrc
+
+RUN cat > /usr/local/bin/mixr-status <<'EOF'
+#!/bin/bash
+echo "======================================"
+echo "Status da Instalação MIXR"
+echo "======================================"
+echo ""
+check_dir() {
+    if [ -d "$1" ]; then
+        echo "✓ $2: OK"
+        COUNT=$(find "$1" -maxdepth 1 | wc -l)
+        echo "    ($((COUNT - 1)) itens)"
+        return 0
+    else
+        echo "✗ $2: NÃO ENCONTRADO"
+        return 1
+    fi
+}
+check_dir "/opt/mixr" "MIXR Root"
+check_dir "/opt/mixr/src" "MIXR Source"
+check_dir "/opt/mixr-3rdparty" "Third Party Libraries"
+check_dir "/opt/mixr-examples" "MIXR Examples"
+echo ""
+if [ -d "/opt/mixr/lib" ]; then
+    LIB_COUNT=$(find /opt/mixr/lib -name "*.so" -o -name "*.a" 2>/dev/null | wc -l)
+    echo "Bibliotecas MIXR: $LIB_COUNT encontradas"
+    find /opt/mixr/lib -name "*.so" -o -name "*.a" 2>/dev/null | head -5
+fi
+echo ""
+EOF
+
+RUN chmod +x /usr/local/bin/mixr-status
+
+WORKDIR /workspace
+EXPOSE 3000-3010
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD [ -d "/opt/mixr" ] || exit 1
+
+CMD ["/bin/bash", "-c", "source /etc/profile.d/mixr-env.sh && tail -f /dev/null"]

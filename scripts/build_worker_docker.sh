@@ -16,7 +16,8 @@ NC='\033[0m' # No Color
 # Configuration
 IMAGE_NAME="${IMAGE_NAME:-ml-inference-worker}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
-ENABLE_GPU="${ENABLE_GPU:-False}"
+ENABLE_GPU="${ENABLE_GPU:-True}"
+# ENABLE_GPU="${ENABLE_GPU:-False}"
 ONNX_VERSION="${ONNX_VERSION:-1.23.2}"
 CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE:-Release}"
 

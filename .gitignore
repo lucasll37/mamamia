@@ -122,3 +122,4 @@ site/
 # Monitoring data
 prometheus-data/
 grafana-data/
+sandbox/
