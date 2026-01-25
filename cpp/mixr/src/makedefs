@@ -1,0 +1,89 @@
+
+# -----------------------------------------------------------------------------
+# 'make' configuration file
+# -----------------------------------------------------------------------------
+
+# ---
+# MIXR root directory
+#   Use the environment variable MIXR_ROOT to locate MIXR
+#   -- No default
+#   -- see $(MXIR_ROOT)/setenv
+# ---
+
+# ---
+# MIXR 3rd party root directory
+#   Use the environment variable MIXR_3RD_PARTY_ROOT to locate the include and
+#   lib directories for the MIXR 3rd party software(e.g., cigi, JSBSim)
+#   -- No default
+#   -- see $(MIXR_ROOT)/setenv
+# ---
+
+# ---
+# library directories
+# ---
+MIXR_LIB_DIR = $(MIXR_ROOT)/lib
+
+# ---
+# Uncomment if using FTGL version 2.1.2 or earlier
+# ---
+# CPPFLAGS += -DFTGL_2_1_2 
+
+# ---
+# Uncomment if using JSBSim version 0.9.13 or earlier
+# ---
+# CPPFLAGS += -DJSBSIM_0_9_13 
+
+# ---
+# freetype2 include path
+# ---
+FREETYPE2_INC_DIR = /usr/include/freetype2
+
+# ---
+# JSBSim include directory
+# ---
+JSBSIM_INC_DIR = $(MIXR_3RD_PARTY_ROOT)/include/JSBSim
+
+# ---
+# HLA RTI include directory
+# ---
+HLA_INC_DIR = $(MIXR_3RD_PARTY_ROOT)/include/RTI13
+
+# ---
+# Optimize?
+# ---
+CPPFLAGS += -g -O2
+
+# ---
+# Modify standard flags
+# ---
+CPPFLAGS += -fPIC
+CPPFLAGS += -I$(MIXR_ROOT)/include -I$(MIXR_3RD_PARTY_ROOT)/include
+CPPFLAGS += -pthread
+CPPFLAGS += -Wall
+#CPPFLAGS += -pedantic
+#CPPFLAGS += -Wextra
+
+# ---
+# Compiler specific C++ version flags
+# ---
+CPPFLAGS += -std=c++11 
+
+# warn of old c-style casts, so they can be replaced
+#CPPFLAGS += -Wold-style-cast
+# supress warnings of misleading-indentation coming from google protocol buffers code
+CPPFLAGS += -Wno-misleading-indentation
+# supress unused variable warnings
+CPPFLAGS += -Wno-unused-variable
+CPPFLAGS += -Wno-unused-result
+CPPFLAGS += -Wno-unused-but-set-variable
+
+# ---
+# GCC or Clang compiler selection - by default, use system
+# default compiler
+#
+# If you want to use clang, make sure to compile 3rd party libs
+# with clang - especially, Google Protocol Buffers
+# ---
+#CXX = g++
+#CXX = clang++
+

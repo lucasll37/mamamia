@@ -1,0 +1,132 @@
+# vs directories
+vs2013/
+vs2015/
+vs2017/
+build/obj/
+.vs/
+*.tmp
+
+# vs code
+.vscode
+
+# visual database files
+*.txp
+*.txf
+*.tpf
+
+# lib directory
+lib/
+
+# vs runtime libs
+concrt*.dll
+msvcp*.dll
+vcamp*.dll
+vccorlib*.dll
+vcomp*.dll
+vcruntime*.dll
+
+# kde 5
+.directory
+
+# gcc header files
+*.gch
+
+#
+# qt user project file and build directories
+#
+mainQt1/mainQt1.pro.user
+mainQt1/tmp/
+mainQt1/.qmake.stash
+build-mainQt1-Desktop_Qt*
+mainQt1/Makefile.Debug
+mainQt1/Makefile.Release
+mainQt1/release/*
+mainQt1/debug/*
+mainQt1/qtMakefile
+
+# visual studio generated files
+*.idb
+*.ilk
+*.pdb
+*.exp
+
+#
+# eclipse files (for now)
+#
+.cproject
+.project
+.settings/
+
+# gcc compiled object files
+*.[oa]
+
+# ignore windows executables and libraries
+*.exe
+*.lib
+
+# keep premake
+!premake*.*
+
+# backup files
+*.bak
+*~
+
+# preprocessed input (scenario) files
+*.edl
+!testSlots/file0.edl
+
+# protocol buffers test apps
+testRecordData/*.csv
+testRecorderRead/*.csv
+shared/data/recorder/*.ebd*
+
+# linux executables
+demoEfis/demoEfis
+demoFlightDisplays1/demoFlightDisplays1
+demoFlightDisplays2/demoFlightDisplays2
+demoInstruments/demoInstruments
+demoSubDisplays/demoSubDisplays
+mainCockpit/mainCockpit
+mainGlut/mainGlut
+mainGndMapRdr/mainGndMapRdr
+mainIgViewer/mainIgViewer
+mainLaero/mainLaero
+mainNonRT1/mainNonRT1
+mainPuzzle1/mainPuzzle1
+mainPuzzle2/mainPuzzle2
+mainQt1/mainQt1
+mainSim1/mainSim1
+mainSim2/mainSim2
+mainSim3/mainSim3
+mainTerrain/mainTerrain
+mainUbf1/mainUbf1
+testDafif/testDafif
+testEvents/testEvents
+testGraphics/testGraphics
+testInfrared/testInfrared
+testLinearSys/testLinearSys
+testLinkage/testLinkage
+testMatrix/testMatrix
+testMetaObject/testMetaObject
+testNavUtils/testNavUtils
+testNetHandler/testNetHandler
+testRadar/testRadar
+testRecordData/testRecordData
+testRecordData/*_v*
+testRecorderRead/testRecorderRead
+testRecorderWrite/testRecorderWrite
+testRecorderWrite/*.bin
+testSlots/testSlots
+testStateMach/testStateMach
+testTables/testTables
+testTemplates/testTemplates
+testTimer/testTimer
+testVmap/testVmap
+tutorial01/tutorial01
+tutorial02/tutorial02
+tutorial03/tutorial03
+tutorial04/tutorial04
+tutorial05/tutorial05
+tutorial06/tutorial06
+tutorial07/tutorial07
+tutorial08/tutorial08
