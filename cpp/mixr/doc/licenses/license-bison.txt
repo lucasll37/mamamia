@@ -1,5 +1,0 @@
-
-bison is used to create the MIXR parser.
-
-Check their website to understand current license terms.
-They have changed between different versions.

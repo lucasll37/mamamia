@@ -1,0 +1,14 @@
+# pkg-config source file
+
+prefix=/home/lima/Project/mamamia/cpp/mixr_dev/mixr-3rdparty
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: openscenegraph-osgText
+Description: Text rendering library for Openscenegraph
+Version: 3.6.3
+Requires: openscenegraph-osgDB openscenegraph-osg openthreads
+Conflicts:
+Libs: -L${libdir} -losgText
+Cflags: -I${includedir}

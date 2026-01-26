@@ -1,0 +1,28 @@
+# pkg-config source file
+
+prefix=/home/lima/Project/mamamia/cpp/mixr_dev/mixr-3rdparty
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: openscenegraph
+Description: 3D scenegraph
+Version: 3.6.3
+Requires: openthreads
+Conflicts:
+Libs: -L${libdir} -losg \
+                  -losgDB \
+                  -losgFX \
+                  -losgGA \
+                  -losgParticle \
+                  -losgSim \
+                  -losgText \
+                  -losgUtil \
+                  -losgTerrain \
+                  -losgManipulator \
+                  -losgViewer \
+                  -losgWidget \
+                  -losgShadow \
+                  -losgAnimation \
+                  -losgVolume
+Cflags: -I${includedir}

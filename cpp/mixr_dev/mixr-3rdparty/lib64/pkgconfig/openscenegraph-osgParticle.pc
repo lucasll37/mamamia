@@ -1,0 +1,14 @@
+# pkg-config source file
+
+prefix=/home/lima/Project/mamamia/cpp/mixr_dev/mixr-3rdparty
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: openscenegraph-osgParticle
+Description: Particle system library for Openscenegraph
+Version: 3.6.3
+Requires: openscenegraph-osgDB openscenegraph-osgUtil openscenegraph-osg openthreads
+Conflicts:
+Libs: -L${libdir} -losgParticle
+Cflags: -I${includedir}

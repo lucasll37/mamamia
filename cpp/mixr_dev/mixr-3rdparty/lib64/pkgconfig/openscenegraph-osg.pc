@@ -1,0 +1,14 @@
+# pkg-config source file
+
+prefix=/home/lima/Project/mamamia/cpp/mixr_dev/mixr-3rdparty
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib64
+includedir=${prefix}/include
+
+Name: openscenegraph-osg
+Description: 3D scenegraph
+Version: 3.6.3
+Requires: openthreads
+Conflicts:
+Libs: -L${libdir} -losg
+Cflags: -I${includedir}

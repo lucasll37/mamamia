@@ -1,0 +1,10 @@
+prefix=/home/lima/Project/mamamia/cpp/mixr_dev/mixr-3rdparty
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: CIGI Class Library
+Description: Library for unpacking, manipulating, and packing CIGI packets
+Version: 3.3.2
+Libs: -L${libdir} -lcigicl
+Cflags: -I${includedir}/cigicl 
