@@ -2,10 +2,10 @@
 # Arquivo setenv.sh local para build do MIXR
 
 # Define MIXR_ROOT como o diretório do projeto
-export MIXR_ROOT="/home/lima/Project/mamamia/cpp/mixr_dev/mixr"
+export MIXR_ROOT="/home/lucas/Projects/mamamia/cpp/mixr_dev/mixr"
 
 # Define onde as dependências 3rd party serão instaladas
-export MIXR_3RD_PARTY_ROOT="/home/lima/Project/mamamia/cpp/mixr_dev/mixr-3rdparty"
+export MIXR_3RD_PARTY_ROOT="/home/lucas/Projects/mamamia/cpp/mixr_dev/mixr-3rdparty"
 
 # Adiciona ao PATH
 export PATH="${MIXR_3RD_PARTY_ROOT}/bin:${PATH}"

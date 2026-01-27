@@ -88,7 +88,7 @@ function install_jsbsim
 {
    echo 'JSBSim being compiled...' >&2
    pushd .
-   tar xzvf jsbsim_cvs_v2015_0704.tgz --directory tmp
+   tar xzvf jsbsim_cvs_v2016_0203.tgz --directory tmp
    cd tmp/jsbsim
    ./autogen.sh --prefix=$MIXR_3RD_PARTY_ROOT --enable-libraries
    make -j all

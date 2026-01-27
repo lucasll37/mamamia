@@ -53,6 +53,7 @@ if [ ${#MISSING_DEPS[@]} -ne 0 ]; then
     echo "Instalando dependências do sistema..."
     sudo apt update
     sudo apt install -y \
+        libgdal-dev \
         libftgl-dev \
         libfreetype6-dev \
         freeglut3-dev \
@@ -63,6 +64,7 @@ if [ ${#MISSING_DEPS[@]} -ne 0 ]; then
         cmake \
         m4 \
         autoconf \
+        autogen \
         automake \
         libtool \
         libtool-bin \

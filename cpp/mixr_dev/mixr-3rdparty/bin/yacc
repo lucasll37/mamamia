@@ -1,2 +1,2 @@
 #! /bin/sh
-exec '/home/lima/Project/mamamia/cpp/mixr_dev/mixr-3rdparty/bin/bison' -y "$@"
+exec '/home/lucas/Projects/mamamia/cpp/mixr_dev/mixr-3rdparty/bin/bison' -y "$@"

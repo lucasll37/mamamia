@@ -49,7 +49,7 @@ INCLUDES
 DEFINITIONS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
-#define ID_PROPAGATE "$Id: FGPropagate.h,v 1.81 2014/05/17 15:15:53 jberndt Exp $"
+#define ID_PROPAGATE "$Id: FGPropagate.h,v 1.83 2016/01/23 10:48:11 bcoconni Exp $"
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 FORWARD DECLARATIONS
@@ -57,7 +57,6 @@ FORWARD DECLARATIONS
 
 namespace JSBSim {
 
-using std::deque;
 class FGInitialCondition;
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,7 +92,7 @@ CLASS DOCUMENTATION
     @endcode
 
     @author Jon S. Berndt, Mathias Froehlich, Bertrand Coconnier
-    @version $Id: FGPropagate.h,v 1.81 2014/05/17 15:15:53 jberndt Exp $
+    @version $Id: FGPropagate.h,v 1.83 2016/01/23 10:48:11 bcoconni Exp $
   */
 
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -138,10 +137,10 @@ public:
 
     FGColumnVector3 vInertialPosition;
 
-    deque <FGColumnVector3> dqPQRidot;
-    deque <FGColumnVector3> dqUVWidot;
-    deque <FGColumnVector3> dqInertialVelocity;
-    deque <FGQuaternion>    dqQtrndot;
+    std::deque <FGColumnVector3> dqPQRidot;
+    std::deque <FGColumnVector3> dqUVWidot;
+    std::deque <FGColumnVector3> dqInertialVelocity;
+    std::deque <FGQuaternion>    dqQtrndot;
   };
 
   /** Constructor.
@@ -551,7 +550,6 @@ public:
   void SetRadius(double r)
   {
     VState.vLocation.SetRadius(r);
-    VehicleRadius = r;
     VState.vInertialPosition = Tec2i * VState.vLocation;
   }
 
@@ -567,7 +565,7 @@ public:
   void SetDistanceAGL(double tt);
   void SetDistanceAGLKm(double tt);
 
-  void SetInitialState(const FGInitialCondition *);
+  void SetInitialState(const FGInitialCondition*);
   void SetLocation(const FGLocation& l);
   void SetLocation(const FGColumnVector3& lv)
   {
@@ -619,7 +617,6 @@ private:
 
   FGQuaternion Qec2b;
 
-  double VehicleRadius;
   FGColumnVector3 LocalTerrainVelocity, LocalTerrainAngularVelocity;
 
   eIntegrateType integrator_rotational_rate;
@@ -632,13 +629,13 @@ private:
 
   void Integrate( FGColumnVector3& Integrand,
                   FGColumnVector3& Val,
-                  deque <FGColumnVector3>& ValDot,
+                  std::deque <FGColumnVector3>& ValDot,
                   double dt,
                   eIntegrateType integration_type);
 
   void Integrate( FGQuaternion& Integrand,
                   FGQuaternion& Val,
-                  deque <FGQuaternion>& ValDot,
+                  std::deque <FGQuaternion>& ValDot,
                   double dt,
                   eIntegrateType integration_type);
 
