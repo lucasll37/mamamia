@@ -1,7 +1,5 @@
-// #include "mixr/base/Object.hpp"
-// #include "mixr/base/String.hpp"
-
-
+#include "mixr/base/Object.hpp"
+#include "mixr/base/String.hpp"
 #include <iostream>
 #include <vector>
 #include <thread>
@@ -29,12 +27,6 @@ int main(int argc, char** argv) {
     std::cout << "ML Inference Client Example" << std::endl;
     std::cout << "==================================" << std::endl;
     std::cout << std::endl;
-
-
-    // TEST ////////////////////////////////////////////////////
-    mixr::base::String* str = new mixr::base::String("Hello");
-    str->unref();
-    // TEST ////////////////////////////////////////////////////
     
     // Parse command line arguments
     std::string server_address = "localhost:50052";
@@ -201,3 +193,12 @@ int main(int argc, char** argv) {
     
     return 0;
 }
+
+
+// int main() {
+//     // Usar MIXR diretamente
+//     mixr::base::String* str = new mixr::base::String("Hello");
+//     str->unref();
+    
+//     return 0;
+// }
