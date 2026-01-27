@@ -4,6 +4,6 @@
         "conan": {}
     },
     "include": [
-        "build/CMakePresets.json"
+        "/home/lima/Project/mamamia/build/CMakePresets.json"
     ]
 }

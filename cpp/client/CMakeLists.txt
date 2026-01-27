@@ -28,6 +28,12 @@ target_link_libraries(client_example PRIVATE
     inference_client
 )
 
+# Link MIXR if available
+if(MIXR_FOUND)
+    target_link_libraries(client_example PRIVATE mixr)
+    message(STATUS "Client linked with MIXR")
+endif()
+
 # Set compile options
 target_compile_options(inference_client PRIVATE
     -Wall -Wextra -Wpedantic

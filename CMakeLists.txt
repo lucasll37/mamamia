@@ -32,6 +32,65 @@ find_package(gRPC REQUIRED)
 message(STATUS "Found Protobuf via Conan")
 message(STATUS "Found gRPC via Conan")
 
+
+# ============================================
+# MIXR Setup
+# ============================================
+set(MIXR_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/cpp/mixr_dev/mixr")
+set(MIXR_3RDPARTY "${CMAKE_CURRENT_SOURCE_DIR}/cpp/mixr_dev/mixr-3rdparty")
+
+if(EXISTS "${MIXR_ROOT}/lib" AND EXISTS "${MIXR_3RDPARTY}/lib")
+    message(STATUS "Found MIXR installation")
+    message(STATUS "  MIXR Root: ${MIXR_ROOT}")
+    message(STATUS "  MIXR 3rd Party: ${MIXR_3RDPARTY}")
+    
+    # Find all MIXR libraries
+    file(GLOB MIXR_LIBS "${MIXR_ROOT}/lib/*.a")
+    file(GLOB MIXR_3RD_LIBS "${MIXR_3RDPARTY}/lib/*.a")
+    
+    # Create MIXR target
+    add_library(mixr INTERFACE)
+    
+    target_include_directories(mixr INTERFACE
+        ${MIXR_ROOT}/include
+        ${MIXR_3RDPARTY}/include
+    )
+    
+    target_link_directories(mixr INTERFACE
+        ${MIXR_ROOT}/lib
+        ${MIXR_3RDPARTY}/lib
+    )
+    
+    target_link_libraries(mixr INTERFACE
+        ${MIXR_LIBS}
+        ${MIXR_3RD_LIBS}
+    )
+    
+    # Find system dependencies for MIXR
+    find_package(OpenGL REQUIRED)
+    find_package(GLUT REQUIRED)
+    find_package(Freetype REQUIRED)
+    
+    target_link_libraries(mixr INTERFACE
+        OpenGL::GL
+        GLUT::GLUT
+        Freetype::Freetype
+        ftgl
+        fontconfig
+        X11
+        Xi
+        dl
+        pthread
+        m
+    )
+    
+    set(MIXR_FOUND TRUE)
+    message(STATUS "MIXR target created - ready to use")
+else()
+    message(STATUS "MIXR not found (install with: ./scripts/install_mixr.sh)")
+    set(MIXR_FOUND FALSE)
+endif()
+
 # ============================================
 # ONNX Runtime Detection
 # ============================================
